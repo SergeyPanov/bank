@@ -51,6 +51,8 @@ type TransferTxResult struct {
 	ToEntry     Entry    `json:"entry"`
 }
 
+var txKey = struct{}{}
+
 func (s *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
@@ -95,6 +97,21 @@ func (s *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferT
 		}
 
 		// TODO: update acc balance
+		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.FromAccountId,
+			Amount: -arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.ToAccountId,
+			Amount: arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
