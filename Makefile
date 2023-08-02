@@ -22,4 +22,5 @@ test:
 server:
 	go run main.go
 
-.PHONY: createdb
+mock:
+	go generate ./...
