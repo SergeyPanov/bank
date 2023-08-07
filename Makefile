@@ -1,5 +1,5 @@
 create_container:
-	docker run --name bank_db -e POSTGRES_PASSWORD=secret -e POSTGRES_USER=root -p 5432:5432 -d postgres
+	docker run --name bank_db --network bank-network -e POSTGRES_PASSWORD=secret -e POSTGRES_USER=root -p 5432:5432 -d postgres
 
 createdb:
 	docker exec -it bank_db createdb --username=root --owner=root bank
