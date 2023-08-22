@@ -88,7 +88,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	statikFs, err := fs.New()
 	if err != nil {
-		log.Fatal("cannot create statikfile system: %s", err)
+		log.Fatalf("cannot create statikfile system: %s", err)
 	}
 	swaggerHandler := http.StripPrefix("/swagger/", http.FileServer(statikFs))
 	mux.Handle("/swagger/", swaggerHandler)
