@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -52,4 +53,64 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user1.Email, user2.Email)
 	require.Equal(t, user1.PasswordChangedAt, user2.PasswordChangedAt)
 	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
+}
+
+func TestUpdateUserFullName(t *testing.T) {
+	oldUser := createRandomUser(t)
+
+	newFullName := util.RandomOwner()
+	updatedUser, err := testQueries.UpdateUser(context.Background(), UpdateUserParams{
+		Username: oldUser.Username,
+		FullName: sql.NullString{
+			Valid:  true,
+			String: newFullName,
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotEqual(t, oldUser.FullName, updatedUser.FullName)
+	require.Equal(t, newFullName, updatedUser.FullName)
+	require.Equal(t, oldUser.HashedPassword, updatedUser.HashedPassword)
+}
+
+func TestUpdateUserEmail(t *testing.T) {
+	oldUser := createRandomUser(t)
+
+	newFullEmail := util.RandomEmail()
+	updatedUser, err := testQueries.UpdateUser(context.Background(), UpdateUserParams{
+		Username: oldUser.Username,
+		Email: sql.NullString{
+			Valid:  true,
+			String: newFullEmail,
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotEqual(t, oldUser.Email, updatedUser.Email)
+	require.Equal(t, newFullEmail, updatedUser.Email)
+	require.Equal(t, oldUser.HashedPassword, updatedUser.HashedPassword)
+	require.Equal(t, oldUser.FullName, updatedUser.FullName)
+}
+
+func TestUpdateUserPassword(t *testing.T) {
+	oldUser := createRandomUser(t)
+
+	newPassword := util.RandomString(20)
+
+	hashedPassword, err := util.HashedPassword(newPassword)
+	require.NoError(t, err)
+
+	updatedUser, err := testQueries.UpdateUser(context.Background(), UpdateUserParams{
+		Username: oldUser.Username,
+		HashedPassword: sql.NullString{
+			Valid:  true,
+			String: hashedPassword,
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotEqual(t, oldUser.HashedPassword, updatedUser.HashedPassword)
+	require.Equal(t, oldUser.Email, updatedUser.Email)
+	require.Equal(t, hashedPassword, updatedUser.HashedPassword)
+	require.Equal(t, oldUser.FullName, updatedUser.FullName)
 }
