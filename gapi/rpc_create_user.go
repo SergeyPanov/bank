@@ -69,15 +69,3 @@ func validateCreateUserRequest(req *pb.CreateUserRequest) (violations []*errdeta
 
 	return
 }
-
-func validateLoginUserRequest(req *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := val.ValidateUsername(req.GetUsername()); err != nil {
-		violations = append(violations, fieldViolation("username", err))
-	}
-
-	if err := val.ValidatePassword(req.GetPassword()); err != nil {
-		violations = append(violations, fieldViolation("password", err))
-	}
-
-	return
-}

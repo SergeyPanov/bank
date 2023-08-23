@@ -7,6 +7,8 @@ import (
 	db "github.com/SergeyPanov/bank/db/sqlc"
 	"github.com/SergeyPanov/bank/pb"
 	"github.com/SergeyPanov/bank/util"
+	"github.com/SergeyPanov/bank/val"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -69,4 +71,16 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 	}
 
 	return &resp, nil
+}
+
+func validateLoginUserRequest(req *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateUsername(req.GetUsername()); err != nil {
+		violations = append(violations, fieldViolation("username", err))
+	}
+
+	if err := val.ValidatePassword(req.GetPassword()); err != nil {
+		violations = append(violations, fieldViolation("password", err))
+	}
+
+	return
 }
