@@ -15,6 +15,7 @@ import (
 	db "github.com/SergeyPanov/bank/db/sqlc"
 	_ "github.com/SergeyPanov/bank/doc/statik"
 	"github.com/SergeyPanov/bank/gapi"
+	"github.com/SergeyPanov/bank/mail"
 	"github.com/SergeyPanov/bank/pb"
 	"github.com/SergeyPanov/bank/util"
 	"github.com/SergeyPanov/bank/worker"
@@ -54,13 +55,13 @@ func main() {
 
 	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
 
-	go runTaskProcessor(redisOpt, store)
+	go runTaskProcessor(config, redisOpt, store)
 	go runGatewayServer(config, store, taskDistributor)
 	runGrpcServer(config, store, taskDistributor)
 }
-
-func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
-	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
+	mailer := mail.NewEmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, mailer)
 	log.Info().Msg("start task processor")
 	err := taskProcessor.Start()
 	if err != nil {

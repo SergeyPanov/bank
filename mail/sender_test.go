@@ -2,20 +2,27 @@ package mail
 
 import (
 	"testing"
+
+	"github.com/SergeyPanov/bank/util"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSendEmail(t *testing.T) {
-	// config, err := util.LoadConfig("..")
-	// require.NoError(t, err)
+	if testing.Short() {
+		t.Skip()
+	}
 
-	// sender := NewEmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
+	config, err := util.LoadConfig("..")
+	require.NoError(t, err)
 
-	// subject := "Test email SimpleBank"
-	// content := "test content"
+	sender := NewEmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
 
-	// to := []string{"panovsy@gmail.com"}
-	// attachedFiles := []string{"../Makefile"}
+	subject := "Test email SimpleBank"
+	content := "test content"
 
-	// err = sender.SendEmail(subject, content, to, nil, nil, attachedFiles)
-	// require.NoError(t, err)
+	to := []string{"panovsy@gmail.com"}
+	attachedFiles := []string{"../Makefile"}
+
+	err = sender.SendEmail(subject, content, to, nil, nil, attachedFiles)
+	require.NoError(t, err)
 }

@@ -23,7 +23,7 @@ sqlc:
 	sqlc generate
 
 test:
-	go test -v -cover -count=1 ./... 
+	go test -v -cover -short -count=1 ./... 
 
 server:
 	go run main.go
@@ -46,4 +46,7 @@ evans:
 redis:
 	docker run --name redis -p 6379:6379 -d redis
 
-.PHONY: proto redis
+new_migration:
+	migrate create -ext sql -dir db/migration -seq $(name)
+
+.PHONY: proto redis new_migration
