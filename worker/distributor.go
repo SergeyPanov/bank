@@ -1,5 +1,7 @@
 package worker
 
+//go:generate mockgen -destination=../worker/mock/distributor.go -package=mockwk github.com/SergeyPanov/bank/worker TaskDistributor
+
 import (
 	"context"
 
