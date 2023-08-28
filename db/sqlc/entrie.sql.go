@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createEntry = `-- name: CreateEntry :one
@@ -19,12 +20,12 @@ INSERT INTO entries (
 `
 
 type CreateEntryParams struct {
-	AccountID sql.NullInt64 `json:"account_id"`
-	Amount    int64         `json:"amount"`
+	AccountID pgtype.Int8 `json:"account_id"`
+	Amount    int64       `json:"amount"`
 }
 
 func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, createEntry, arg.AccountID, arg.Amount)
+	row := q.db.QueryRow(ctx, createEntry, arg.AccountID, arg.Amount)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
@@ -41,7 +42,7 @@ WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetEntry(ctx context.Context, id int64) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, getEntry, id)
+	row := q.db.QueryRow(ctx, getEntry, id)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
@@ -65,7 +66,7 @@ type ListEntriesParams struct {
 }
 
 func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]Entry, error) {
-	rows, err := q.db.QueryContext(ctx, listEntries, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listEntries, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -82,9 +83,6 @@ func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]Ent
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

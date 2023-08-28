@@ -1,17 +1,16 @@
 package db
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/SergeyPanov/bank/util"
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var testQueries *Queries
-var testDb *sql.DB
+var testStore Store
 
 func TestMain(m *testing.M) {
 	config, err := util.LoadConfig("../../.")
@@ -19,12 +18,12 @@ func TestMain(m *testing.M) {
 		log.Fatal("cannot read config", err)
 	}
 
-	testDb, err = sql.Open(config.DBDriver, config.DBSource)
+	connPool, err := pgxpool.New(context.Background(), config.DBSource)
 	if err != nil {
 		log.Fatal("can't connect to db")
 	}
 
-	testQueries = New(testDb)
+	testStore = NewStore(connPool)
 
 	os.Exit(m.Run())
 }

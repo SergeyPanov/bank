@@ -2,7 +2,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type TransferTxParams struct {
@@ -28,11 +29,11 @@ func (s *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Transf
 		var err error
 
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
-			FromAccountID: sql.NullInt64{
+			FromAccountID: pgtype.Int8{
 				Int64: arg.FromAccountId,
 				Valid: true,
 			},
-			ToAccountID: sql.NullInt64{
+			ToAccountID: pgtype.Int8{
 				Int64: arg.ToAccountId,
 				Valid: true,
 			},
@@ -43,7 +44,7 @@ func (s *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Transf
 		}
 
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: sql.NullInt64{
+			AccountID: pgtype.Int8{
 				Int64: arg.FromAccountId,
 				Valid: true,
 			},
@@ -54,7 +55,7 @@ func (s *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Transf
 		}
 
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: sql.NullInt64{
+			AccountID: pgtype.Int8{
 				Int64: arg.ToAccountId,
 				Valid: true,
 			},

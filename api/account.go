@@ -1,15 +1,13 @@
 package api
 
 import (
-	"database/sql"
 	"errors"
-	"log"
 	"net/http"
 
 	db "github.com/SergeyPanov/bank/db/sqlc"
 	"github.com/SergeyPanov/bank/token"
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type createAccountRequest struct {
@@ -27,7 +25,7 @@ func (s *Server) createAccount(ctx *gin.Context) {
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	arg := db.CreateAccountParams{
 		Owner: authPayload.Username,
-		Currency: sql.NullString{
+		Currency: pgtype.Text{
 			Valid:  true,
 			String: req.Currency,
 		},
@@ -36,13 +34,9 @@ func (s *Server) createAccount(ctx *gin.Context) {
 
 	account, err := s.store.CreateAccount(ctx, arg)
 	if err != nil {
-		if pqError, ok := err.(*pq.Error); ok {
-			log.Println(pqError.Code.Name())
-
-			switch pqError.Code.Name() {
-			case "foreign_key_violation", "unique_violation":
-				ctx.JSON(http.StatusForbidden, errResponse(pqError))
-			}
+		errCode := db.ErrorCode(err)
+		if errCode == db.ForeignKeyViolation || errCode == db.UniqueViolation {
+			ctx.JSON(http.StatusForbidden, errResponse(err))
 		}
 		ctx.JSON(http.StatusInternalServerError, errResponse(err))
 		return
@@ -65,7 +59,7 @@ func (s *Server) getAccount(ctx *gin.Context) {
 
 	account, err := s.store.GetAccount(ctx, req.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errResponse(err))
 			return
 		}

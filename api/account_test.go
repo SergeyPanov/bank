@@ -16,6 +16,7 @@ import (
 	"github.com/SergeyPanov/bank/token"
 	"github.com/SergeyPanov/bank/util"
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,7 +53,7 @@ func TestGetAccountAPI(t *testing.T) {
 				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(acc.ID)).Times(1).Return(db.Account{}, sql.ErrNoRows)
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(acc.ID)).Times(1).Return(db.Account{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -119,7 +120,7 @@ func randomAcc(owner string) db.Account {
 		ID:      util.RandomInt(1, 100),
 		Owner:   owner,
 		Balance: util.RandomMoney(),
-		Currency: sql.NullString{
+		Currency: pgtype.Text{
 			String: util.RandomCurrency(),
 			Valid:  true,
 		},

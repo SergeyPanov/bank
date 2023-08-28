@@ -2,12 +2,13 @@ package gapi
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 
 	db "github.com/SergeyPanov/bank/db/sqlc"
 	"github.com/SergeyPanov/bank/pb"
 	"github.com/SergeyPanov/bank/util"
 	"github.com/SergeyPanov/bank/val"
+	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,7 +23,7 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 
 	user, err := s.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrRecordNotFound) {
 			return nil, status.Errorf(codes.NotFound, "user has not been found")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to retrieve the user: %s", err)
@@ -47,7 +48,7 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 
 	session, err := s.store.CreateSession(ctx, db.CreateSessionParams{
 		ID: refreshPayload.ID,
-		Username: sql.NullString{
+		Username: pgtype.Text{
 			Valid:  true,
 			String: user.Username,
 		},

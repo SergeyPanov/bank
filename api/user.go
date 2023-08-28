@@ -1,8 +1,7 @@
 package api
 
 import (
-	"database/sql"
-	"log"
+	"errors"
 	"net/http"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/SergeyPanov/bank/util"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type createUserRequest struct {
@@ -61,14 +60,8 @@ func (s *Server) createUser(ctx *gin.Context) {
 
 	user, err := s.store.CreateUser(ctx, arg)
 	if err != nil {
-		if pqError, ok := err.(*pq.Error); ok {
-			log.Println(pqError.Code.Name())
-
-			switch pqError.Code.Name() {
-			case "unique_violation":
-				ctx.JSON(http.StatusForbidden, errResponse(pqError))
-				return
-			}
+		if db.ErrorCode(err) == db.UniqueViolation {
+			ctx.JSON(http.StatusForbidden, errResponse(err))
 		}
 		ctx.JSON(http.StatusInternalServerError, errResponse(err))
 		return
@@ -102,7 +95,7 @@ func (s *Server) loginUser(ctx *gin.Context) {
 
 	user, err := s.store.GetUser(ctx, req.Username)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errResponse(err))
 			return
 		}
@@ -130,7 +123,7 @@ func (s *Server) loginUser(ctx *gin.Context) {
 
 	session, err := s.store.CreateSession(ctx, db.CreateSessionParams{
 		ID: refreshPayload.ID,
-		Username: sql.NullString{
+		Username: pgtype.Text{
 			Valid:  true,
 			String: user.Username,
 		},

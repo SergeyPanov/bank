@@ -2,11 +2,11 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/SergeyPanov/bank/util"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,13 +16,13 @@ func createRandomAccount(t *testing.T) Account {
 	arg := CreateAccountParams{
 		Owner:   user.Username,
 		Balance: util.RandomMoney(),
-		Currency: sql.NullString{
+		Currency: pgtype.Text{
 			String: util.RandomCurrency(),
 			Valid:  true,
 		},
 	}
 
-	account, err := testQueries.CreateAccount(context.Background(), arg)
+	account, err := testStore.CreateAccount(context.Background(), arg)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, account)
@@ -43,7 +43,7 @@ func TestCreateAccount(t *testing.T) {
 
 func TestGetAccount(t *testing.T) {
 	acc1 := createRandomAccount(t)
-	acc, err := testQueries.GetAccount(context.Background(), acc1.ID)
+	acc, err := testStore.GetAccount(context.Background(), acc1.ID)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, acc)
@@ -62,7 +62,7 @@ func TestUpdateAccount(t *testing.T) {
 		Balance: util.RandomMoney(),
 	}
 
-	acc2, err := testQueries.UpdateAccount(context.Background(), arg)
+	acc2, err := testStore.UpdateAccount(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, acc2)
 
@@ -76,12 +76,12 @@ func TestUpdateAccount(t *testing.T) {
 func TestDeleteAccount(t *testing.T) {
 	acc1 := createRandomAccount(t)
 
-	err := testQueries.DeleteAccount(context.Background(), acc1.ID)
+	err := testStore.DeleteAccount(context.Background(), acc1.ID)
 	require.NoError(t, err)
 
-	acc, err := testQueries.GetAccount(context.Background(), acc1.ID)
+	acc, err := testStore.GetAccount(context.Background(), acc1.ID)
 	require.Error(t, err)
-	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.EqualError(t, err, ErrRecordNotFound.Error())
 	require.Empty(t, acc)
 }
 
@@ -97,7 +97,7 @@ func TestListAccounts(t *testing.T) {
 		Offset: 0,
 	}
 
-	accounts, err := testQueries.ListAccounts(context.Background(), arg)
+	accounts, err := testStore.ListAccounts(context.Background(), arg)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, accounts)
